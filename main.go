@@ -7,17 +7,19 @@ func main() {
 	a := []Node{
 		NewSourceNode(),
 		NewSourceNode(),
+		NewSourceNode(),
 	}
 
+	newNode := NewLogicNode(2, And)
 	b := []*LogicNode{
-		Connect(a, NewLogicNode(2, And)),
+		Connect(a, &newNode),
 	}
-
-	// want to implement output nodes
 
 	// push all the sources
 	for _, node := range a {
-		node.getOutputChan() <- Bit(true)
+		go func(n Node) {
+			n.getOutputChan() <- Bit(true)
+		}(node)
 	}
 
 	// Start threads waiting to evaluate
