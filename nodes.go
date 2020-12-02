@@ -5,6 +5,7 @@ import "fmt"
 // Node is an interface that generalizes all types of Nodes in the program
 type Node interface {
 	getOutputChan() chan Bit
+	EvaluateNode()
 }
 
 // LogicNode is the main type of Node in the program
@@ -55,7 +56,7 @@ func NewLogicNode(inputShape int, f func(...Bit) Bit) LogicNode {
 // getOutputChan to satisfy the Node interface
 func (n LogicNode) getOutputChan() chan Bit { return n.output }
 
-// EvaluateNode is
+// EvaluateNode is function to activate Node
 func (n *LogicNode) EvaluateNode() {
 	inputs := []Bit{}
 	for _, ch := range n.input {
@@ -74,3 +75,6 @@ func NewSourceNode() SourceNode {
 
 // getOutputChan to satisfy the Node interface
 func (n SourceNode) getOutputChan() chan Bit { return n.output }
+
+// EvaluateNode for SourceNode does nothing
+func (n SourceNode) EvaluateNode() { return }
