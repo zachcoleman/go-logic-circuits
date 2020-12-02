@@ -38,6 +38,7 @@ func main() {
 	outputNodes = append(outputNodes, &newNode)
 
 	// push Bit onto all the sources
+	// right now all sources can only be used once!!!
 	for _, node := range inputNodes {
 		go func(n Node) {
 			n.getOutputChan() <- Bit(rand.Intn(2) == 1)
