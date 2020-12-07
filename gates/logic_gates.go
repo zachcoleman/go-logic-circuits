@@ -1,4 +1,4 @@
-package main
+package gates
 
 // Bit is alias for bool to make code more readable and easier to reason about
 type Bit bool
