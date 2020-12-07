@@ -31,49 +31,49 @@ func (c *Circuit) ParseString(input string) (bool, error) {
 
 	// split the input into tokens
 	tokens := strings.Split(input, " ")
-	sucess := false
 
-	fmt.Println(strings.Join(tokens, "~"))
-	fmt.Printf("Num tokens: %v \n", len(tokens))
-
-	// catch errors
-	if len(tokens) <= 1 {
-		return false, fmt.Errorf("incorrect number of arguments in: \n\t %v", input)
-	}
-
-	// add input
+	// add input(s)
 	if strings.ToUpper(tokens[0]) == "INPUT" {
 		for _, name := range tokens[1:] {
 			if c.validNewInput(name) {
 				tmp := nodes.NewSourceNode()
 				c.InputNodes[name] = &tmp
-				sucess = true
 			} else {
+				// at least one input failed return false and error
 				return false, fmt.Errorf("%v already defined : \n\t %v", name, input)
 			}
 		}
+		// successfully looped through all inputs so log and return
+		c.Log = append(c.Log, input)
+		return true, nil
 	}
 
-	// add output
+	// add output node(s)
 	if strings.ToUpper(tokens[0]) == "OUTPUT" {
 		for _, name := range tokens[1:] {
 			if c.validNewOutput(name) {
 				c.OutputNodes[name] = c.CircuitNodes[name]
-				sucess = true
+			} else {
+				// at least one output failed return false and error
+				if _, ok := c.CircuitNodes[name]; ok {
+					return false, fmt.Errorf("%v already output : \n\t %v", name, input)
+				}
+				return false, fmt.Errorf("%v not defined : \n\t %v", name, input)
 			}
-			if _, ok := c.CircuitNodes[name]; ok {
-				return false, fmt.Errorf("%v already output : \n\t %v", name, input)
-			}
-			return false, fmt.Errorf("%v not defined : \n\t %v", name, input)
 		}
+		// successfully looped through all outputs so log and return
+		c.Log = append(c.Log, input)
+		return true, nil
 	}
 
 	// Expecting a string of style:
 	//		C = A OR B or C = NOT A
-	if len(tokens) != 5 || len(tokens) != 4 {
+	// Unexpected length for a declarative statement
+	if len(tokens) < 4 && len(tokens) > 5 {
 		return false, fmt.Errorf("unexpected number of tokens %v: \n\t %v", len(tokens), input)
 	}
 
+	// add circuit node
 	if len(tokens) == 5 {
 		if c.validNewNode(strings.ToUpper(tokens[0])) && tokens[1] == "=" {
 			newNode := tokens[0]
@@ -90,9 +90,11 @@ func (c *Circuit) ParseString(input string) (bool, error) {
 					ins = append(ins, c.CircuitNodes[name])
 				}
 			}
+			// create new node, connect to circuit, add to log, return true
 			tmp := nodes.NewLogicNode(2, operation)
 			c.CircuitNodes[newNode] = nodes.Connect(ins, &tmp)
-			sucess = true
+			c.Log = append(c.Log, input)
+			return true, nil
 		}
 
 	} else if len(tokens) == 4 {
@@ -117,14 +119,14 @@ func (c *Circuit) ParseString(input string) (bool, error) {
 				}
 			}
 
+			// create new node, connect to circuit, add to log, return true
 			tmp := nodes.NewLogicNode(1, parseMap["NOT"])
 			c.CircuitNodes[newNode] = nodes.Connect(ins, &tmp)
-			sucess = true
+			c.Log = append(c.Log, input)
+			return true, nil
 		}
 	}
-	if sucess {
-		c.Log = append(c.Log, input)
-		return true, nil
-	}
-	return false, nil
+
+	// input fell through all possible cases
+	return false, fmt.Errorf("Invalid statement: %v", input)
 }

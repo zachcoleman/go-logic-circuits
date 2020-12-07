@@ -1,6 +1,9 @@
 package nodes
 
-import gates "go-logic-circuits/gates"
+import (
+	"fmt"
+	gates "go-logic-circuits/gates"
+)
 
 // Node is an interface that generalizes all types of Nodes in the program
 // A Node is defined as something that can be Evaluated and has an outputz
@@ -30,7 +33,7 @@ type SourceNode struct {
 // Connect takes a list of Nodes and connects the channels to a new Node
 func Connect(ins []Node, out *LogicNode) *LogicNode {
 	if len(out.input) != len(ins) {
-		panic("Mismatching # of expected inputs and input channels")
+		panic(fmt.Sprintf("Got %v input(s) and expected %v input(s)", len(ins), len(out.input)))
 	}
 
 	for i := 0; i < len(ins); i++ {
