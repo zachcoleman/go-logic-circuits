@@ -5,7 +5,7 @@ import (
 	"go-logic-circuits/circuit"
 	"go-logic-circuits/gates"
 	"log"
-	"strings"
+	"math/rand"
 	"time"
 )
 
@@ -20,46 +20,68 @@ func main() {
 
 	// set random seed for pushing random values onto the sources
 	// for testing primarily
-	// rand.Seed(time.Now().UnixNano())
-
-	// start timer
-	start := time.Now()
+	rand.Seed(time.Now().UnixNano())
 
 	circ := circuit.NewCircuit()
 
 	fmt.Println(circ.ParseString("INPUT A B"))
 	fmt.Println(circ.ParseString("C = A OR B"))
+
 	fmt.Println(circ.ParseString("OUTPUT C"))
 
-	fmt.Println(circ.ParseString("INPUT D E"))
-	fmt.Println(circ.ParseString("F = A XOR E"))
-	fmt.Println(circ.ParseString("G = NOT B"))
-	fmt.Println(circ.ParseString("H = F NOR G"))
+	fmt.Println(circ.ParseString("INPUT D"))
+	fmt.Println(circ.ParseString("E = C AND D"))
 
-	fmt.Println(circ.ParseString("OUTPUT H"))
+	fmt.Println(circ.ParseString("OUTPUT E"))
 
-	var input = map[string]gates.Bit{
-		"A": gates.Bit(true),
-		"B": gates.Bit(true),
-		"D": gates.Bit(true),
-		"E": gates.Bit(true),
+	input := make(map[string]gates.Bit)
+	output := make(map[string]gates.Bit)
+
+	runs := 100
+	start := time.Now()
+	for i := 0; i < runs; i++ {
+		for name := range circ.InputNodes {
+			input[name] = gates.Bit(rand.Intn(2) == 1)
+		}
+		output = circ.Evaluate(input)
 	}
-	output := circ.Evaluate(input)
 
-	elapsed := time.Since(start)
+	avgTime := time.Since(start) / time.Duration(runs)
 
-	log.Printf("\n\t" + strings.Join(circ.Log, "\n\t"))
+	// log.Printf("\n\t" + strings.Join(circ.Log, "\n\t"))
 	log.Printf(`
 	Input: %v
 	Result: %v
 	Num input nodes: %v
 	Num output nodes: %v
 	Total number of operations: %v
-	Execution time: %v`, input, output, len(circ.InputNodes), len(circ.OutputNodes),
-		len(circ.CircuitNodes), elapsed)
+	Avg. Execution time (%v runs): %v`, input, output, len(circ.InputNodes), len(circ.OutputNodes),
+		len(circ.CircuitNodes), runs, avgTime)
 
-	newCirc := circuit.DuplicateCircuit(circ)
-	fmt.Println(newCirc.Log)
-	fmt.Println(newCirc.Evaluate(input))
+	// Duplicating circuit
+	// newCirc := circuit.DuplicateCircuit(circ)
+
+	// start = time.Now()
+	// output = newCirc.Evaluate(input)
+	// elapsed = time.Since(start)
+
+	// add a test that verifies that the Duplicate pointers point to different
+	// memory locations but produce same output (for random input)
+	// fmt.Println(circ.InputNodes)
+	// fmt.Println(newCirc.InputNodes)
+	// fmt.Println(circ.CircuitNodes)
+	// fmt.Println(newCirc.CircuitNodes)
+	// fmt.Println(circ.OutputNodes)
+	// fmt.Println(newCirc.OutputNodes)
+
+	// log.Printf("\n\t" + strings.Join(newCirc.Log, "\n\t"))
+	// log.Printf(`
+	// Input: %v
+	// Result: %v
+	// Num input nodes: %v
+	// Num output nodes: %v
+	// Total number of operations: %v
+	// Execution time: %v`, input, output, len(newCirc.InputNodes), len(newCirc.OutputNodes),
+	// 	len(newCirc.CircuitNodes), elapsed)
 
 }

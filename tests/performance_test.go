@@ -87,7 +87,7 @@ func TestSeries(t *testing.T) {
 	logicNodes := []nodes.Node{}
 	outputNodes := []nodes.Node{}
 
-	// large scale paralell circuit
+	// large scale series circuit
 	n := 100000
 
 	// Starting large chain event

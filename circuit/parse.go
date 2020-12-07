@@ -53,6 +53,7 @@ func (c *Circuit) ParseString(input string) (bool, error) {
 		for _, name := range tokens[1:] {
 			if c.validNewOutput(name) {
 				c.OutputNodes[name] = c.CircuitNodes[name]
+				c.OutputNodes[name].IncrementOutput()
 			} else {
 				// at least one output failed return false and error
 				if _, ok := c.CircuitNodes[name]; ok {
