@@ -59,13 +59,13 @@ func TestParallel(t *testing.T) {
 	// print inputs
 	inVals := []gates.Bit{}
 	for _, node := range inputNodes {
-		inVals = append(inVals, node.(*nodes.SourceNode).GetBitValue())
+		inVals = append(inVals, node.(*nodes.SourceNode).BitValue())
 	}
 
 	// collect outputs
 	outVals := make([]gates.Bit, len(outputNodes))
 	for i, node := range outputNodes {
-		outVals[i] = <-node.GetOutputChan()
+		outVals[i] = <-node.OutputChan()
 	}
 
 	elapsed := time.Since(start)
@@ -132,13 +132,13 @@ func TestSeries(t *testing.T) {
 	// print inputs
 	inVals := []gates.Bit{}
 	for _, node := range inputNodes {
-		inVals = append(inVals, node.(*nodes.SourceNode).GetBitValue())
+		inVals = append(inVals, node.(*nodes.SourceNode).BitValue())
 	}
 
 	// collect outputs
 	outVals := make([]gates.Bit, len(outputNodes))
 	for i, node := range outputNodes {
-		outVals[i] = <-node.GetOutputChan()
+		outVals[i] = <-node.OutputChan()
 	}
 
 	elapsed := time.Since(start)
