@@ -9,7 +9,7 @@ import (
 // Node is an interface that generalizes all types of Nodes in the program
 // A Node is defined as something that can be Evaluated and has an outputz
 type Node interface {
-	GetOutputChan() chan gates.Bit
+	OutputChan() chan gates.Bit
 	EvaluateNode()
 	IncrementOutput()
 }
@@ -26,7 +26,7 @@ type LogicNode struct {
 
 // SourceNode is a special type of node for creating the input gates.Bits into graph
 type SourceNode struct {
-	BitValue   gates.Bit
+	bitValue   gates.Bit
 	output     chan gates.Bit
 	numOutputs int
 }
@@ -37,10 +37,10 @@ func Connect(ins []Node, node *LogicNode) *LogicNode {
 		panic(fmt.Sprintf("Got %v input(s) and expected %v input(s)", len(ins), len(node.input)))
 	}
 
-	// connect node's input channels to the output channel of the input nodes
+	// connect receiving node's input channels to the output channels of the input nodes passed in
 	// increment input nodes number of outputs required
 	for i := 0; i < len(ins); i++ {
-		node.input[i] = ins[i].GetOutputChan()
+		node.input[i] = ins[i].OutputChan()
 		ins[i].IncrementOutput()
 	}
 
@@ -57,13 +57,13 @@ func NewLogicNode(inputShape int, f func(...gates.Bit) gates.Bit) LogicNode {
 	//create a slice of input gates.Bit channels
 	inChs := make([]chan gates.Bit, inputShape)
 	for i := 0; i < inputShape; i++ {
-		inChs[i] = make(chan gates.Bit, 100)
+		inChs[i] = make(chan gates.Bit)
 	}
 
 	return LogicNode{
 		inChs,
 		f,
-		make(chan gates.Bit, 100),
+		make(chan gates.Bit),
 		0,
 	}
 }
@@ -72,16 +72,16 @@ func NewLogicNode(inputShape int, f func(...gates.Bit) gates.Bit) LogicNode {
 func NewSourceNode() SourceNode {
 	return SourceNode{
 		gates.Bit(false),
-		make(chan gates.Bit, 100),
+		make(chan gates.Bit),
 		0,
 	}
 }
 
-// GetOutputChan to satisfy the Node interface
-func (n *LogicNode) GetOutputChan() chan gates.Bit { return n.output }
+// OutputChan to satisfy the Node interface
+func (n *LogicNode) OutputChan() chan gates.Bit { return n.output }
 
-// GetNumOutputs to get numOutputs
-func (n *LogicNode) GetNumOutputs() int { return n.numOutputs }
+// NumOutputs to get numOutputs
+func (n *LogicNode) NumOutputs() int { return n.numOutputs }
 
 // IncrementOutput is used to increment number of outputs node is connected to
 func (n *LogicNode) IncrementOutput() { n.numOutputs++ }
@@ -89,8 +89,6 @@ func (n *LogicNode) IncrementOutput() { n.numOutputs++ }
 // EvaluateNode is function to activate Node
 func (n *LogicNode) EvaluateNode() {
 
-	// create a WaitGroup so that caclulating the results waits for
-	// all inputs
 	var wg sync.WaitGroup
 
 	// must recieve all inputs to calculate result
@@ -109,19 +107,17 @@ func (n *LogicNode) EvaluateNode() {
 	wg.Wait()
 	result := n.f(inputs...)
 
-	// push the result out asynchronously numOutputs times
+	// push the result out numOutputs times
 	for i := 0; i < n.numOutputs; i++ {
-		go func(n *LogicNode, r gates.Bit) {
-			n.output <- r
-		}(n, result)
+		n.output <- result
 	}
 }
 
-// GetOutputChan to satisfy the Node interface
-func (n *SourceNode) GetOutputChan() chan gates.Bit { return n.output }
+// OutputChan to satisfy the Node interface
+func (n *SourceNode) OutputChan() chan gates.Bit { return n.output }
 
-// GetNumOutputs to get numOutputs
-func (n *SourceNode) GetNumOutputs() int { return n.numOutputs }
+// NumOutputs to get numOutputs
+func (n *SourceNode) NumOutputs() int { return n.numOutputs }
 
 // IncrementOutput is used to increment number of outputs node is connected to
 func (n *SourceNode) IncrementOutput() { n.numOutputs++ }
@@ -130,13 +126,13 @@ func (n *SourceNode) IncrementOutput() { n.numOutputs++ }
 func (n *SourceNode) EvaluateNode() {
 	for i := 0; i < n.numOutputs; i++ {
 		go func(n *SourceNode) {
-			n.output <- n.BitValue
+			n.output <- n.bitValue
 		}(n)
 	}
 }
 
 // SetBitValue sets gates.BitValue for SourceNode
-func (n *SourceNode) SetBitValue(b gates.Bit) { n.BitValue = b }
+func (n *SourceNode) SetBitValue(b gates.Bit) { n.bitValue = b }
 
-// GetBitValue gets gates.BitValue
-func (n *SourceNode) GetBitValue() gates.Bit { return n.BitValue }
+// BitValue gets gates.BitValue
+func (n *SourceNode) BitValue() gates.Bit { return n.bitValue }

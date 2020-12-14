@@ -9,38 +9,35 @@ import (
 // Evaluate the Circuit object on a set of inputs
 func (c *Circuit) Evaluate(ins map[string]gates.Bit) map[string]gates.Bit {
 
-	// synchronously call set BitValue for every InputNode
+	// set bitValue for every InputNode
 	for s, node := range c.InputNodes {
 		node.(*nodes.SourceNode).SetBitValue(ins[s])
 	}
 
-	// create WaitGroup
-	var wg sync.WaitGroup
-
-	// push Bit onto all the sources
+	// push Bit onto all the source output channels
 	for _, node := range c.InputNodes {
-		node.EvaluateNode() // not a blocking call
+		go node.EvaluateNode()
 	}
 
-	// Start threads waiting to evaluate
+	// Start threads waiting to evaluate inputs
 	for _, node := range c.CircuitNodes {
-		node.EvaluateNode() // blocks as necessary
+		go node.EvaluateNode()
 	}
 
 	// collect the outputs
 	var outVals = sync.Map{}
 
+	var wg sync.WaitGroup
 	for s, node := range c.OutputNodes {
 		wg.Add(1)
 		go func(s string, node nodes.Node) {
 			defer wg.Done()
-			outVals.Store(s, <-node.GetOutputChan())
+			outVals.Store(s, <-node.OutputChan())
 		}(s, node)
 	}
-
-	// wait on all output channels
 	wg.Wait()
 
+	// put outputs into normal map
 	tmp := make(map[string]gates.Bit)
 	outVals.Range(
 		func(key interface{}, value interface{}) bool {
