@@ -88,7 +88,8 @@ func main() {
 	} else {
 		// run an enumeration
 		tree := makeTree(len(circ.InputNodes) + 1)
-		perms := traverseTree(tree, []int{})
+		perms := &[][]int{}
+		traverseTree(tree, []int{}, perms) // acts as a primer
 
 		// get one set ordering of key
 		keys := []string{}
@@ -98,7 +99,7 @@ func main() {
 
 		// get pairs of results
 		pairMap := [][]map[string]gates.Bit{}
-		for _, perm := range perms {
+		for _, perm := range *perms {
 			input := make(map[string]gates.Bit)
 			for i, key := range keys {
 				input[key] = gates.Bit(perm[i] == 1)
@@ -155,19 +156,23 @@ func makeTree(n int) *Node {
 	return root
 }
 
-func traverseTree(root *Node, curr []int) [][]int {
-	res := [][]int{}
+func traverseTree(root *Node, curr []int, res *[][]int) *[][]int {
 
 	if root.left == nil && root.right == nil {
 		curr = append(curr, root.val)
-		res = append(res, curr)
-		return res
+		*res = append(*res, curr)
 	} else {
 		if root.val != -1 {
 			curr = append(curr, root.val)
 		}
-		res = append(res, traverseTree(root.left, curr)...)
-		res = append(res, traverseTree(root.right, curr)...)
+		// copies are necessary since curr is slice
+		// passed by reference by default
+		leftcopy := make([]int, len(curr))
+		rightcopy := make([]int, len(curr))
+		copy(leftcopy, curr)
+		copy(rightcopy, curr)
+		traverseTree(root.left, leftcopy, res)
+		traverseTree(root.right, rightcopy, res)
 	}
 
 	return res
