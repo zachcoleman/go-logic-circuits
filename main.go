@@ -101,7 +101,6 @@ func main() {
 		for _, perm := range perms {
 			input := make(map[string]gates.Bit)
 			for i, key := range keys {
-				fmt.Println(i, gates.Bit(perm[i] == 1))
 				input[key] = gates.Bit(perm[i] == 1)
 			}
 			output := circ.Evaluate(input)
